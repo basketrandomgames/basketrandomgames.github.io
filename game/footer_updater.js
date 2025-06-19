@@ -1,5 +1,149 @@
 // 批量更新footer的JavaScript脚本
 
+// 游戏容器和全屏按钮的样式
+const gameContainerStyles = `
+<style type="text/css">
+.game-container {
+  position: relative;
+  width: 900px;
+  height: 675px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.fullscreen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  z-index: 10;
+  transition: background-color 0.3s;
+}
+.fullscreen-btn:hover {
+  background-color: rgba(0,0,0,0.8);
+}
+
+/* 响应式设计 - 手机端优化 */
+@media (max-width: 992px) {
+  .game-container {
+    width: 100%;
+    height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    height: 400px;
+  }
+  h1 {
+    font-size: 1.8rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .game-container {
+    height: 300px;
+  }
+  .fullscreen-btn {
+    padding: 5px 8px;
+  }
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+</style>
+`;
+
+// 游戏描述内容
+const gameDescription = `
+<div class="card p-4 mb-4" style="background-color: rgba(0,0,0,0.7);">
+    <section>
+        <h2 class="text-white mb-3">Play Basketball Games Online - Free Experience</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <h3 class="text-info mb-2">Game Features</h3>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item bg-dark text-white py-2">🏀 Simple and easy controls</li>
+                        <li class="list-group-item bg-dark text-white py-2">🏆 Challenge high scores</li>
+                        <li class="list-group-item bg-dark text-white py-2">⚡ No installation needed</li>
+                        <li class="list-group-item bg-dark text-white py-2">🌈 Fun for all ages</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <h3 class="text-info mb-2">How to Play</h3>
+                    <p class="text-white">Use mouse or touch to control direction and power. Enjoy this fun basketball game online!</p>
+                </div>
+                <div class="mb-3">
+                    <h3 class="text-info mb-2">Why Choose Us</h3>
+                    <p class="text-white">Free, no registration, works on all devices. Perfect for basketball fans and casual gamers alike!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+`;
+
+// 全屏按钮JavaScript代码
+const fullscreenScript = `
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const gameIframe = document.getElementById('game-iframe');
+    const gameContainer = document.querySelector('.game-container');
+    
+    // 检测是否是移动设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // 在移动设备上调整全屏按钮的位置和大小
+    if (isMobile) {
+        fullscreenBtn.style.padding = '10px 15px';
+        fullscreenBtn.style.fontSize = '1.2em';
+    }
+    
+    fullscreenBtn.addEventListener('click', function() {
+        if (gameIframe.requestFullscreen) {
+            gameIframe.requestFullscreen();
+        } else if (gameIframe.webkitRequestFullscreen) { /* Safari */
+            gameIframe.webkitRequestFullscreen();
+        } else if (gameIframe.msRequestFullscreen) { /* IE11 */
+            gameIframe.msRequestFullscreen();
+        }
+    });
+    
+    // Change icon when entering or exiting fullscreen
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    function handleFullscreenChange() {
+        if (document.fullscreenElement || 
+            document.webkitFullscreenElement || 
+            document.mozFullScreenElement ||
+            document.msFullscreenElement) {
+            fullscreenBtn.innerHTML = '<i class="fa fa-compress"></i>';
+        } else {
+            fullscreenBtn.innerHTML = '<i class="fa fa-expand"></i>';
+        }
+    }
+});
+</script>
+`;
+
 // 新的footer HTML内容
 const newFooter = `
 <!-- New Footer with About and Links -->
@@ -47,6 +191,7 @@ const newFooter = `
 <script src="../js/bootstrap.min.js" type="text/javascript"></script>
 <script src="../js/script.js" type="text/javascript"></script>
 <script src="../js/custom.js" type="text/javascript"></script>
+${fullscreenScript}
 `;
 
 // 使用方法:
@@ -82,23 +227,42 @@ fs.readdir(gameDir, (err, files) => {
         return;
       }
 
-      // 替换footer部分
-      let newContent;
+      // 添加游戏容器样式到head部分
+      let newContent = data;
       
-      // 检查是否包含旧的footer
-      if (data.includes('<div class="footer-copyright py-4">')) {
+      // 检查是否已经有游戏容器样式
+      if (!newContent.includes('.game-container {')) {
+        newContent = newContent.replace('</head>', `${gameContainerStyles}\n</head>`);
+      }
+      
+      // 更新游戏iframe容器为响应式设计
+      newContent = newContent.replace(
+        /<div class="mx-auto" style="width: 900px; height: 675px; overflow: hidden;">\s*<iframe/g,
+        `<div class="game-container">\n                    <button id="fullscreen-btn" class="fullscreen-btn" title="Fullscreen Mode">\n                        <i class="fa fa-expand"></i>\n                    </button>\n                    <iframe id="game-iframe"`
+      );
+      
+      // 添加游戏描述内容
+      if (newContent.includes('<h2 class="my-4 text-center">Description</h2>') && 
+          !newContent.includes('Game Features')) {
+        newContent = newContent.replace(
+          '<h2 class="my-4 text-center">Description</h2>',
+          '<h2 class="my-4 text-center text-white">Description</h2>\n            ' + gameDescription
+        );
+      }
+      
+      // 替换footer部分
+      if (newContent.includes('<div class="footer-copyright py-4">')) {
         // 替换旧的footer
-        newContent = data.replace(
+        newContent = newContent.replace(
           /(<\/div>\s*<!-- end Poplular -->\s*<\/div>\s*<!-- end container -->\s*)(<div class="footer-copyright py-4">[\s\S]*?)(<script[\s\S]*?<\/script>\s*<\/body>\s*<\/html>)/,
           `$1\n${newFooter}\n</body>\n</html>`
         );
-      } else if (data.includes('<!-- New Footer with About and Links -->')) {
-        // 已经有新的footer，不需要更新
-        console.log(`文件 ${file} 已经有新的footer，跳过`);
-        return;
+      } else if (newContent.includes('<!-- New Footer with About and Links -->')) {
+        // 已经有新的footer，只更新游戏容器和描述
+        console.log(`文件 ${file} 已经有新的footer，只更新游戏容器和描述`);
       } else {
         // 没有找到旧的footer，在结尾前插入新的footer
-        newContent = data.replace(
+        newContent = newContent.replace(
           /(<\/div>\s*<!-- end Poplular -->\s*<\/div>\s*<!-- end container -->\s*)(<\/body>\s*<\/html>)/,
           `$1\n${newFooter}\n</body>\n</html>`
         );
